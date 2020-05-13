@@ -44,7 +44,7 @@ class DashboardComponent extends React.Component {
 
                 {
                     this.state.selectedChat !== null && !this.state.newChatFormVisible ?
-                        <ChatTextBoxComponent submitMessageFn={this.submitMessage}></ChatTextBoxComponent> :
+                        <ChatTextBoxComponent messageReadFn={this.messageRead} submitMessageFn={this.submitMessage}></ChatTextBoxComponent> :
                         null
                 }
 
@@ -56,8 +56,9 @@ class DashboardComponent extends React.Component {
 
     signOut = () => firebase.auth().signOut();
 
-    selectChat = (chatIndex) => {
-        this.setState({ selectedChat: chatIndex });
+    selectChat = async (chatIndex) => {
+        await this.setState({ selectedChat: chatIndex });
+        this.messageRead();
     }
 
     submitMessage = (msg) => {
@@ -72,13 +73,31 @@ class DashboardComponent extends React.Component {
                     message: msg,
                     timestamp: Date.now()
                 }),
-                recieverHasRead: false
+                receiverHasRead: false
             });
     }
 
     buildDocKey = (friend) => [this.state.email, friend].sort().join(":");
 
     newChatButtonClicked = () => this.setState({ newChatFormVisible: true, selectChat: null });
+
+
+    messageRead = () => {
+        const dockey = this.buildDocKey(this.state.chats[this.state.selectedChat].users.filter(_usr => _usr !== this.state.email)[0]);
+        if (this.clickedChatwhereNotSender(this.state.selectedChat)) {
+            firebase
+                .firestore()
+                .collection('chats')
+                .doc(dockey)
+                .update({ receiverHasRead: true })
+        } else {
+            console.log('clicked message');
+        }
+    }
+
+
+    clickedChatwhereNotSender = (chatindex) => this.state.chats[chatindex].messages[this.state.chats[chatindex].messages.length - 1].sender !== this.state.email;
+
 
     componentDidMount = () => {
         firebase.auth().onAuthStateChanged(async _usr => {

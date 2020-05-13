@@ -48,7 +48,7 @@ class ChatTextBoxComponent extends React.Component {
         }
     }
 
-    userClickedInput = () => console.log('Clicked');
+    userClickedInput = () => this.props.messageReadFn();
 
 }
 
